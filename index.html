@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#d97757">
+  <title>Vevin</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+  <style>
+    :root, [data-theme="light"] {
+      --bg: #f7f7f4;
+      --surface: #ffffff;
+      --surface-2: #f0f0eb;
+      --text: #1a1a1a;
+      --text-secondary: #5c5c5c;
+      --muted: #8a8a8a;
+      --border: #e5e5e0;
+      --accent: #d97757;
+      --accent-soft: #f5e6e0;
+      --user-bg: #e8e6df;
+      --shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    [data-theme="dark"] {
+      --bg: #1a1a1a;
+      --surface: #262624;
+      --surface-2: #30302e;
+      --text: #f0f0eb;
+      --text-secondary: #b0b0a8;
+      --muted: #7a7a72;
+      --border: #3a3a36;
+      --accent: #e8a087;
+      --accent-soft: #3d2e28;
+      --user-bg: #3a3a36;
+      --shadow: 0 1px 3px rgba(0,0,0,.3);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.55;
+      transition: background .25s, color .25s;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 17px;
+      letter-spacing: -0.3px;
+    }
+    .logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--accent);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .icon-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      transition: all .15s;
+    }
+    .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: var(--surface-2);
+    }
+    .status.ready { color: #2d6a4f; background: #d8f3dc; }
+    [data-theme="dark"] .status.ready { color: #95d5b2; background: #1b4332; }
+    .status.offline { color: #9a3412; background: #ffedd5; }
+    [data-theme="dark"] .status.offline { color: #fdba74; background: #431407; }
+    .status.loading { color: var(--accent); }
+
+    .progress-wrap {
+      display: none;
+      padding: 8px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .progress-wrap.visible { display: block; }
+    .progress-bar-bg {
+      height: 3px;
+      background: var(--surface-2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width .3s;
+    }
+    .progress-text {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+    .message-wrapper {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      gap: 14px;
+      animation: fadeUp .3s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message-wrapper.user { flex-direction: row-reverse; }
+    .avatar {
+      flex: 0 0 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .assistant .avatar { background: var(--accent); color: white; }
+    .user .avatar { background: var(--user-bg); color: var(--text); }
+    .bubble {
+      flex: 1;
+      font-size: 15.5px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+    .user .bubble {
+      background: var(--user-bg);
+      padding: 12px 16px;
+      border-radius: 18px;
+      max-width: 85%;
+    }
+    .bubble strong { font-weight: 600; }
+    .bubble em { font-style: italic; }
+    .bubble code {
+      background: var(--surface-2);
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-size: 13.5px;
+      font-family: ui-monospace, monospace;
+    }
+    .bubble pre {
+      background: var(--surface-2);
+      padding: 14px 16px;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 12px 0;
+      font-size: 13.5px;
+    }
+    .bubble pre code { background: none; padding: 0; }
+    .bubble ul, .bubble ol { padding-left: 1.4em; margin: 0.6em 0; }
+    .bubble a { color: var(--accent); }
+
+    .meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .user .meta { justify-content: flex-end; }
+    .copy-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .message-wrapper:hover .copy-btn { opacity: 1; }
+    .copy-btn:hover { color: var(--text); }
+
+    .thinking {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .thinking-dots span {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      background: var(--muted);
+      border-radius: 50%;
+      margin-right: 3px;
+      animation: blink 1.4s infinite both;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: .2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: .3; }
+      40% { opacity: 1; }
+    }
+
+    .welcome {
+      max-width: 560px;
+      text-align: center;
+      padding: 60px 20px 40px;
+    }
+    .welcome h1 {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+    }
+    .welcome p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+    .suggestions button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all .15s;
+      box-shadow: var(--shadow);
+    }
+    .suggestions button:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .load-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 14.5px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .load-btn:hover { filter: brightness(1.08); }
+    .load-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .composer-area {
+      padding: 0 16px 24px;
+      display: flex;
+      justify-content: center;
+    }
+    .composer {
+      width: 100%;
+      max-width: 720px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.06);
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    .composer:focus-within {
+      border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    }
+    #prompt {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 15.5px;
+      resize: none;
+      max-height: 160px;
+      min-height: 24px;
+      line-height: 1.5;
+      padding: 4px 0;
+    }
+    #prompt::placeholder { color: var(--muted); }
+    .composer-actions { display: flex; align-items: center; gap: 6px; }
+    .mic-btn, .send-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+    }
+    .mic-btn { background: transparent; color: var(--muted); }
+    .mic-btn:hover { color: var(--text); background: var(--surface-2); }
+    .mic-btn.listening { color: #c1121f; }
+    .send-btn { background: var(--accent); color: white; }
+    .send-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 0 16px 16px;
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 12px 14px; }
+      #chat { padding: 20px 12px 30px; }
+      .composer-area { padding: 0 12px 16px; }
+      .welcome h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">V</div>
+      Vevin
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="theme-btn" title="Toggle theme">◐</button>
+      <button class="icon-btn" id="clear-btn" title="New chat">＋</button>
+      <div class="status" id="status">Checking…</div>
+    </div>
+  </header>
+
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="progress-text" id="progress-text">Preparing model…</div>
+  </div>
+
+  <section id="chat"></section>
+
+  <div class="composer-area">
+    <div class="composer">
+      <textarea id="prompt" rows="1" placeholder="Message Vevin..." maxlength="4000"></textarea>
+      <div class="composer-actions">
+        <button type="button" class="mic-btn" id="mic-btn" title="Voice input">🎤</button>
+        <button type="button" class="send-btn" id="send-btn" title="Send">↑</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-note" id="footer-note">Works online & offline • Private by design</div>
+
+  <script type="module">
+    import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+
+    // Register service worker for offline support
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+
+    const chat = document.getElementById("chat");
+    const promptInput = document.getElementById("prompt");
+    const sendBtn = document.getElementById("send-btn");
+    const micBtn = document.getElementById("mic-btn");
+    const themeBtn = document.getElementById("theme-btn");
+    const clearBtn = document.getElementById("clear-btn");
+    const statusEl = document.getElementById("status");
+    const progressWrap = document.getElementById("progress-wrap");
+    const progressBar = document.getElementById("progress-bar");
+    const progressText = document.getElementById("progress-text");
+    const footerNote = document.getElementById("footer-note");
+
+    const STORAGE_KEY = "vevin_offline_v1";
+    const THEME_KEY = "vevin_theme";
+
+    let engine = null;
+    let isModelReady = false;
+    let isGenerating = false;
+    let recognition = null;
+
+    // Theme
+    function setTheme(t) {
+      document.documentElement.setAttribute("data-theme", t);
+      localStorage.setItem(THEME_KEY, t);
+      themeBtn.textContent = t === "dark" ? "◑" : "◐";
+    }
+    setTheme(localStorage.getItem(THEME_KEY) || "light");
+    themeBtn.onclick = () => setTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+
+    // Online / Offline status
+    function updateConnectionStatus() {
+      if (!navigator.onLine) {
+        statusEl.textContent = isModelReady ? "Offline • Local AI" : "Offline • Basic mode";
+        statusEl.className = "status offline";
+        footerNote.textContent = "You are offline. Using cached model or basic replies.";
+      } else if (isModelReady) {
+        statusEl.textContent = "Online • Local AI ready";
+        statusEl.className = "status ready";
+        footerNote.textContent = "Running locally in your browser. Fully private.";
+      } else {
+        statusEl.textContent = "Online • Demo mode";
+        statusEl.className = "status";
+        footerNote.textContent = "Works online & offline • Load the model for full intelligence";
+      }
+    }
+    window.addEventListener("online", updateConnectionStatus);
+    window.addEventListener("offline", updateConnectionStatus);
+    updateConnectionStatus();
+
+    // Auto-resize
+    promptInput.addEventListener("input", () => {
+      promptInput.style.height = "auto";
+      promptInput.style.height = Math.min(promptInput.scrollHeight, 160) + "px";
+    });
+
+    // Markdown
+    function escapeHtml(s) {
+      return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+    function renderMarkdown(text) {
+      let h = escapeHtml(text);
+      h = h.replace(/```([\s\S]*?)```/g, (_, c) => `<pre><code>${c.trim()}</code></pre>`);
+      h = h.replace(/`([^`]+)`/g, "<code>$1</code>");
+      h = h.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      h = h.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+      h = h.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      h = h.replace(/^\s*[-•]\s+(.+)$/gm, "<li>$1</li>");
+      h = h.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
+      h = h.replace(/\n\n/g, "</p><p>");
+      h = h.replace(/\n/g, "<br>");
+      return `<p>${h}</p>`;
+    }
+
+    function createWelcome() {
+      const el = document.createElement("div");
+      el.className = "welcome";
+      el.id = "welcome";
+      el.innerHTML = `
+        <h1>How can I help you today?</h1>
+        <p>I’m Vevin. I work both online and offline. Load the local model once (while online) and you can use real AI even without internet.</p>
+        <div class="suggestions">
+          <button data-prompt="Explain quantum computing simply">Explain quantum computing simply</button>
+          <button data-prompt="Help me outline a short story">Help me outline a short story</button>
+          <button data-prompt="What are some good habits for focus?">Good habits for focus</button>
+          <button data-prompt="Write a friendly email declining a meeting">Write a polite decline email</button>
+        </div>
+        <button class="load-btn" id="load-btn">Load local AI model</button>
+      `;
+      chat.appendChild(el);
+      el.querySelectorAll("[data-prompt]").forEach(b => b.onclick = () => send(b.dataset.prompt));
+      document.getElementById("load-btn").onclick = loadModel;
+    }
+
+    function addMessage(text, who, { streaming = false } = {}) {
+      document.getElementById("welcome")?.remove();
+      const wrap = document.createElement("div");
+      wrap.className = `message-wrapper ${who}`;
+      if (streaming) wrap.id = "streaming";
+
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = who === "user" ? "You" : "V";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      if (who === "assistant") bubble.innerHTML = renderMarkdown(text);
+      else bubble.textContent = text;
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      if (who === "assistant" && !streaming) {
+        const copy = document.createElement("button");
+        copy.className = "copy-btn";
+        copy.textContent = "Copy";
+        copy.onclick = () => {
+          navigator.clipboard.writeText(text);
+          copy.textContent = "Copied";
+          setTimeout(() => copy.textContent = "Copy", 1200);
+        };
+        meta.appendChild(copy);
+      }
+
+      const content = document.createElement("div");
+      content.style.flex = "1";
+      content.append(bubble, meta);
+      wrap.append(avatar, content);
+      chat.appendChild(wrap);
+      chat.scrollTop = chat.scrollHeight;
+      return { wrap, bubble };
+    }
+
+    function showThinking() {
+      const wrap = document.createElement("div");
+      wrap.className = "message-wrapper assistant";
+      wrap.id = "thinking";
+      wrap.innerHTML = `
+        <div class="avatar">V</div>
+        <div class="thinking">
+          <div class="thinking-dots"><span></span><span></span><span></span></div>
+          Thinking…
+        </div>
+      `;
+      chat.appendChild(wrap);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    function hideThinking() { document.getElementById("thinking")?.remove(); }
+
+    function persist() {
+      const msgs = [];
+      chat.querySelectorAll(".message-wrapper").forEach(w => {
+        if (w.id === "thinking" || w.id === "streaming") return;
+        const who = w.classList.contains("user") ? "user" : "assistant";
+        const text = w.querySelector(".bubble").innerText;
+        msgs.push({ who, text });
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(msgs));
+    }
+
+    function restore() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return createWelcome();
+      try {
+        const msgs = JSON.parse(raw);
+        if (!msgs.length) return createWelcome();
+        msgs.forEach(m => addMessage(m.text, m.who));
+      } catch { createWelcome(); }
+    }
+
+    clearBtn.onclick = () => {
+      if (!confirm("Start a new conversation?")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      chat.innerHTML = "";
+      createWelcome();
+      promptInput.focus();
+    };
+
+    function getRuleReply(msg) {
+      const m = msg.toLowerCase();
+      if (/^(hi|hello|hey)\b/.test(m)) return "Hello. How can I help you today?";
+      if (m.includes("who are you")) return "I’m Vevin, a helpful assistant that works both online and offline. Once you load the local model, I can think more deeply even without internet.";
+      if (m.includes("what can you do")) return "I can help with writing, explaining ideas, brainstorming, studying, and more. Load the local AI model while you have internet — after that it works offline too.";
+      return `I understand you’re asking about “${msg}”.\n\nI’m currently in basic mode. For better answers, load the local AI model (requires internet only the first time). After that I work fully offline.`;
+    }
+
+    async function loadModel() {
+      if (!navigator.onLine) {
+        alert("You need to be online the first time to download the model. After that it works offline.");
+        return;
+      }
+      const btn = document.getElementById("load-btn");
+      if (btn) btn.disabled = true;
+      statusEl.textContent = "Loading model…";
+      statusEl.className = "status loading";
+      progressWrap.classList.add("visible");
+
+      try {
+        engine = await CreateMLCEngine("Llama-3.2-1B-Instruct-q4f16_1-MLC", {
+          initProgressCallback: (p) => {
+            const pct = Math.round((p.progress || 0) * 100);
+            progressBar.style.width = pct + "%";
+            progressText.textContent = p.text || `Loading… ${pct}%`;
+          }
+        });
+        isModelReady = true;
+        progressWrap.classList.remove("visible");
+        if (btn) btn.remove();
+        updateConnectionStatus();
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Load failed";
+        progressText.textContent = "Could not load model. Try Chrome or Edge with WebGPU.";
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function send(text) {
+      const message = (text || promptInput.value).trim();
+      if (!message || isGenerating) return;
+
+      addMessage(message, "user");
+      promptInput.value = "";
+      promptInput.style.height = "auto";
+      isGenerating = true;
+      sendBtn.disabled = true;
+      showThinking();
+
+      try {
+        if (isModelReady && engine) {
+          hideThinking();
+          const { bubble } = addMessage("", "assistant", { streaming: true });
+          let full = "";
+
+          const stream = await engine.chat.completions.create({
+            messages: [
+              { role: "system", content: "You are Vevin, a helpful, clear, and thoughtful AI assistant. Be concise when possible, warm, and honest. Use markdown when helpful." },
+              { role: "user", content: message }
+            ],
+            stream: true,
+            temperature: 0.7
+          });
+
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content || "";
+            full += delta;
+            bubble.innerHTML = renderMarkdown(full);
+            chat.scrollTop = chat.scrollHeight;
+          }
+          document.getElementById("streaming")?.removeAttribute("id");
+          const meta = bubble.parentElement.querySelector(".meta");
+          const copy = document.createElement("button");
+          copy.className = "copy-btn";
+          copy.textContent = "Copy";
+          copy.onclick = () => {
+            navigator.clipboard.writeText(full);
+            copy.textContent = "Copied";
+            setTimeout(() => copy.textContent = "Copy", 1200);
+          };
+          meta.appendChild(copy);
+        } else {
+          await new Promise(r => setTimeout(r, 500 + Math.random() * 700));
+          hideThinking();
+          addMessage(getRuleReply(message), "assistant");
+        }
+      } catch (err) {
+        hideThinking();
+        addMessage("Something went wrong. Please try again.", "assistant");
+        console.error(err);
+      }
+
+      isGenerating = false;
+      sendBtn.disabled = false;
+      persist();
+      promptInput.focus();
+    }
+
+    sendBtn.onclick = () => send();
+    promptInput.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    // Voice
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onresult = (e) => {
+        promptInput.value = e.results[0][0].transcript;
+        promptInput.dispatchEvent(new Event("input"));
+        micBtn.classList.remove("listening");
+      };
+      recognition.onerror = recognition.onend = () => micBtn.classList.remove("listening");
+      micBtn.onclick = () => {
+        if (micBtn.classList.contains("listening")) {
+          recognition.stop();
+          return;
+        }
+        micBtn.classList.add("listening");
+        recognition.start();
+      };
+    } else {
+      micBtn.style.display = "none";
+    }
+
+    restore();
+    promptInput.focus();
+  </script>
+</body>
+</html>
